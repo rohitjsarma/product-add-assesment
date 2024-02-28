@@ -1,12 +1,15 @@
-// Header.js
 import React from 'react';
+import { useSelector } from 'react-redux';
 
-const Header = ({ totalProducts, onAddProduct }) => {
+const Header = () => {
+  const totalProducts = useSelector((state) => state.totalProducts);
+
   return (
-    <div>
-      <h1>Total Products: {totalProducts}</h1>
-      <button onClick={onAddProduct}>Add Product</button>
-    </div>
+    <header>
+      <h1>Product List</h1>
+      <p>Total Products: {totalProducts}</p>
+      <button>Add Product</button>
+    </header>
   );
 };
 

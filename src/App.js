@@ -1,42 +1,73 @@
-// App.js
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { fetchProducts } from './actions/productActions';
 import Header from './components/Header';
-import ProductGrid from './components/ProductGrid';
-import Modal from './components/Modal';
-import { setProducts, addProduct } from './actions/actions';
-import axios from 'axios';
+import ProductList from './components/ProductList';
+import AddProductModal from './components/AddProductModal';
+import ReactPaginate from 'react-paginate';
 
 const App = () => {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const products = useSelector((state) => state.products);
-  const totalProducts = useSelector((state) => state.products.length); // Calculate totalProducts from Redux store
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { loading, products, error } = useSelector((state) => state.products);
   const dispatch = useDispatch();
+  const productsPerPage = 5;
 
   useEffect(() => {
-    axios.get('https://gist.githubusercontent.com/rohitjsarma/97629c374b806812967e6c53ad877f85/raw/2f43ca54c71c4d7c55963a7c6c748834f75d92e6/gistfile1.txt')
-      .then((response) => {
-        dispatch(setProducts(response.data));
-      })
-      .catch((error) => {
-        console.error('Error fetching products:', error);
-      });
-  }, [dispatch]);
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const endIndex = startIndex + productsPerPage;
+    dispatch(fetchProducts(startIndex, endIndex));
+  }, [dispatch, currentPage, productsPerPage]);
 
-  const handleAddProduct = (product) => {
-    dispatch(addProduct(product));
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
     setIsModalOpen(false);
   };
 
+  const addProduct = (product) => {
+    // Implement adding product functionality here
+    console.log('Adding product:', product);
+  };
+
+  const handlePageClick = (data) => {
+    setCurrentPage(data.selected + 1);
+  };
+
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
   return (
-    <div>
-      <Header totalProducts={totalProducts} onAddProduct={() => setIsModalOpen(true)} />
-      <ProductGrid products={products} />
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={(product) => handleAddProduct(product)}
-      />
+    <div className="container">
+      <Header totalProducts={products.length} openModal={openModal} />
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>Error: {error}</p>
+      ) : (
+        <>
+          <ProductList products={products} />
+          <ReactPaginate
+            pageCount={totalPages}
+            pageRangeDisplayed={3}
+            marginPagesDisplayed={1}
+            onPageChange={handlePageClick}
+            containerClassName={'pagination'}
+            activeClassName={'active'}
+          />
+          <div className="pagination">
+            <button className="btn btn-primary" onClick={() => setCurrentPage(1)}>First</button>
+            <button className="btn btn-primary" onClick={() => setCurrentPage(currentPage - 1)}>Previous</button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button className="btn btn-primary" onClick={() => setCurrentPage(currentPage + 1)}>Next</button>
+            <button className="btn btn-primary" onClick={() => setCurrentPage(totalPages)}>Last</button>
+          </div>
+        </>
+      )}
+      {isModalOpen && <AddProductModal closeModal={closeModal} addProduct={addProduct} />}
     </div>
   );
 };
